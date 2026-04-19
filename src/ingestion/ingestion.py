@@ -3,28 +3,38 @@ import json
 import os
 
 # Configuración del proyecto
-SATELLITE_ID = '25338' # NOAA 15
+SATELLITE_ID = '44387'  # LightSail-2 (Suele responder mucho mejor)
 URL = "https://db.satnogs.org/api/telemetry/"
 TOKEN = '42c6280e7f6c83c7a72b80c0c557bffdec8f8392'
 
 def fetch_data():
     print(f"🛰️ Iniciando protocolo de descarga para el satélite {SATELLITE_ID}...")
     
+    # Definimos las cabeceras con tu Token
     headers = {'Authorization': f'Token {TOKEN}'}
     
-    # --- AQUÍ VA EL CAMBIO ---
-    # Pedimos datos de las últimas 24 horas para asegurar volumen
+    # Parámetros para traer datos ya decodificados (legibles)
     params = {
         'satellite': SATELLITE_ID,
-        'page_size': 100,
+        'page_size': 50,
+        'is_decoded': 'true' 
     }
-    # -------------------------
-    
+
     try:
+        # Realizamos la petición a la API
         response = requests.get(URL, params=params, headers=headers)
         
+        # Si la respuesta es exitosa (Código 200)
         if response.status_code == 200:
             data = response.json()
+            
+            # Verificamos si realmente trajo datos
+            if not data:
+                print("⚠️ No hay datos decodificados recientes para este satélite.")
+                print("💡 Tip: Podés probar con el ID '44387' (LightSail-2) si el NOAA-15 está mudo.")
+                return
+
+            # Creamos la carpeta si no existe
             os.makedirs('data/raw', exist_ok=True)
             
             output_file = 'data/raw/noaa15_raw.json'
@@ -33,11 +43,14 @@ def fetch_data():
                 
             print(f"✅ ¡Éxito! Se han descargado {len(data)} paquetes de telemetría.")
             print(f"📂 Archivo guardado en: {output_file}")
+        
+        elif response.status_code == 401:
+            print("❌ Error 401: El Token es inválido o no tienes permisos.")
         else:
-            print(f"❌ Falló: {response.status_code}")
+            print(f"❌ El servidor respondió con error: {response.status_code}")
             
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"❌ Ocurrió un error inesperado: {e}")
 
 if __name__ == "__main__":
     fetch_data()
