@@ -1,0 +1,7 @@
+__pycache__/
+*.wav
+*.png
+data/raw/batch/*
+output/*
+.venv/
+.idea/
